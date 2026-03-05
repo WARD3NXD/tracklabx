@@ -9,6 +9,7 @@ import { getFlagEmoji } from '@/lib/utils';
 import { getTrackSvg } from '@/lib/data/track-layouts';
 import { getTrackSvgById } from '@/lib/data/track-layouts';
 import { useState, useEffect } from 'react';
+import { LiveSessionWidget } from '@/components/live/LiveSessionWidget';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -158,6 +159,9 @@ export default function HomePage() {
 
       {/* ─── SECTION DIVIDER ─── */}
       <div className="h-px bg-[rgba(255,250,250,0.04)]" />
+
+      {/* Live session widget – only renders (and polls OpenF1) when a session is actually live */}
+      <LiveSessionWidget />
 
       {/* ═══ SECTION 1: UPCOMING RACE COUNTDOWN ═══ */}
       <section className="py-20 md:py-32 px-4 bg-gunmetal-deep relative overflow-hidden">

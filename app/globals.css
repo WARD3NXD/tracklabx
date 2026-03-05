@@ -154,6 +154,27 @@ h6 {
   transform: scaleX(1);
 }
 
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--red);
+  box-shadow: 0 0 8px rgba(237, 40, 57, 0.8);
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
 /* ───── Card Glow ───── */
 .card-glow {
   border: 1px solid rgba(255, 250, 250, 0.06);
