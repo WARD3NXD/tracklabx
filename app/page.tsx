@@ -106,7 +106,7 @@ export default function HomePage() {
               <span className="text-red drop-shadow-[0_0_40px_rgba(237,40,57,0.3)]">Own Every Lap.</span>
             </motion.h1>
             <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm font-mono tracking-widest text-snow/70 mb-12">
-              <span>24 CIRCUITS</span><span className="text-red font-black">|</span><span>10 TEAMS</span><span className="text-red font-black">|</span><span>1,247 SETUPS</span>
+              <span>24 CIRCUITS</span><span className="text-red font-black">|</span><span>11 TEAMS</span><span className="text-red font-black">|</span><span>1,247 SETUPS</span>
             </motion.div>
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Link href="/signup" className="button relative inline-flex items-center justify-center px-10 py-4 bg-red text-white font-barlow font-bold text-lg tracking-wider rounded-none uppercase" style={{ boxShadow: 'var(--shadow-glow-md)' }}>
