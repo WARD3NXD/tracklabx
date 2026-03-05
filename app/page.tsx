@@ -6,10 +6,11 @@ import { Footer } from '@/components/layout/Footer';
 import { tracks } from '@/lib/data/tracks';
 import { calendar2026, getRaceStatus } from '@/lib/data/calendar';
 import { getFlagEmoji } from '@/lib/utils';
-import { getTrackSvg } from '@/lib/data/track-layouts';
-import { getTrackSvgById } from '@/lib/data/track-layouts';
 import { useState, useEffect } from 'react';
 import { LiveSessionWidget } from '@/components/live/LiveSessionWidget';
+import CircuitIcon from '@/components/ui/CircuitIcon';
+import CircuitIconInline from '@/components/ui/CircuitIconInline';
+import { getCircuitIdForRace } from '@/lib/circuitMaps';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -152,7 +153,9 @@ export default function HomePage() {
             </Link>
           </motion.div>
           <div className="overflow-x-auto pb-12 -mx-4 px-4 sm:-mx-8 sm:px-8 scrollbar-hide flex gap-6 snap-x snap-mandatory" style={{ maskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)' }}>
-            {tracks.map((track, i) => (<TrackCard key={track.id} track={track} delay={i * 0.05} />))}
+            {tracks.map((track, i) => (
+              <TrackCard key={track.id} track={track} delay={i * 0.05} />
+            ))}
           </div>
         </div>
       </section>
@@ -173,8 +176,14 @@ export default function HomePage() {
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute right-[-5%] top-[10%] w-[45%] h-[80%] opacity-[0.04] pointer-events-none hidden md:block"
         >
-          {getTrackSvg(nextRace.id) && (
-            <img src={getTrackSvg(nextRace.id)} alt="" className="w-full h-full object-contain" style={{ filter: 'brightness(10)' }} />
+          {getCircuitIdForRace(nextRace.id) && (
+            <CircuitIconInline
+              circuitId={getCircuitIdForRace(nextRace.id)!}
+              className="circuit-watermark"
+              animate={false}
+              color="var(--snow)"
+              opacity={0.08}
+            />
           )}
         </motion.div>
 
@@ -524,7 +533,7 @@ export default function HomePage() {
 
 function TrackCard({ track, delay }: { track: { id: string; name: string; countryCode: string; lapRecord: string; country: string }, delay: number }) {
   const [isHovered, setIsHovered] = useState(false);
-  const svgPath = getTrackSvgById(track.id);
+  const circuitId = track.id;
 
   return (
     <motion.div
@@ -534,25 +543,32 @@ function TrackCard({ track, delay }: { track: { id: string; name: string; countr
       transition={{ delay: delay, duration: 0.5, ease: 'easeOut' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="flex-shrink-0 w-[280px] sm:w-[340px] h-[400px] bg-carbon border border-snow/5 p-6 flex flex-col relative group snap-start cursor-pointer hover:border-border-red hover:shadow-[0_0_30px_rgba(237,40,57,0.1)] transition-all duration-300 overflow-hidden"
+      className="circuit-card flex-shrink-0 w-[280px] sm:w-[340px] h-[400px] bg-carbon border border-snow/5 p-6 flex flex-col relative group snap-start cursor-pointer hover:border-border-red hover:shadow-[0_0_30px_rgba(237,40,57,0.1)] transition-all duration-300 overflow-hidden"
     >
       {/* Track SVG Background */}
       <div className="absolute inset-x-0 top-0 h-[220px] flex items-center justify-center p-8">
-        <div className={`w-full h-full transition-all duration-700 ${isHovered ? 'opacity-[0.25] scale-105' : 'opacity-[0.1]'}`}>
-          {svgPath ? (
-            <img src={svgPath} alt="" className="w-full h-full object-contain" style={{ filter: 'brightness(10)' }} />
-          ) : (
-            <svg viewBox="0 0 400 300" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.3">
-              <path d="M100 50 Q125 40 150 50 L200 60 Q225 65 240 90 L250 125 Q255 150 240 170 L210 200 Q190 215 170 210 L140 200 Q120 195 110 180 L90 140 Q80 115 90 90 Z" />
-            </svg>
-          )}
+        <div
+          className={`w-full h-full transition-all duration-700 ${
+            isHovered ? 'opacity-[0.25] scale-105' : 'opacity-[0.1]'
+          }`}
+        >
+          <CircuitIconInline
+            circuitId={circuitId}
+            className="w-full h-full"
+            animate={true}
+            loop={false}
+            color="var(--snow)"
+            opacity={1}
+          />
         </div>
       </div>
 
       <div className="mt-auto relative z-10">
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl drop-shadow-md">{getFlagEmoji(track.countryCode)}</span>
-          <span className="text-xs font-mono font-bold text-snow/40 uppercase tracking-widest">{track.countryCode}</span>
+          <CircuitIcon circuitId={circuitId} size="sm" variant="white" />
+          <span className="text-xs font-mono font-bold text-snow/40 uppercase tracking-widest">
+            {track.country}
+          </span>
         </div>
         <h4 className="font-barlow font-bold text-2xl uppercase leading-tight mb-4 group-hover:text-red transition-colors">{track.name}</h4>
         <div className="border-t border-snow/10 pt-4 flex items-end justify-between">

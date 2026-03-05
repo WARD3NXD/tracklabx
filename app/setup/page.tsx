@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tracks, continents } from '@/lib/data/tracks';
-import { getFlagEmoji } from '@/lib/utils';
 import { Footer } from '@/components/layout/Footer';
-import { getTrackSvgById } from '@/lib/data/track-layouts';
+import CircuitIcon from '@/components/ui/CircuitIcon';
+import CircuitIconInline from '@/components/ui/CircuitIconInline';
 
 
 
@@ -138,23 +138,28 @@ function TrackCard({ track, isSelected, onClick, delay }: { track: { id: string;
             onClick={onClick}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`w-full text-left p-6 transition-all duration-300 relative group overflow-hidden break-inside-avoid flex flex-col justify-between ${heightClass} ${isSelected
+            className={`track-selector-card circuit-card w-full text-left p-6 transition-all duration-300 relative group overflow-hidden break-inside-avoid flex flex-col justify-between ${heightClass} ${isSelected
                 ? 'bg-gunmetal-deep border-2 border-red shadow-[0_0_30px_rgba(237,40,57,0.15)]'
                 : 'bg-gunmetal-deep border border-snow/5 hover:border-red hover:shadow-[0_0_20px_rgba(237,40,57,0.1)]'
                 }`}
         >
             {/* Track Layout SVG */}
             <div className={`absolute -right-4 -bottom-4 w-[160px] h-[140px] pointer-events-none transition-all duration-700 ease-out ${isHovered || isSelected ? 'opacity-[0.35] scale-110' : 'opacity-[0.2] scale-100'}`}>
-                {getTrackSvgById(track.id) && (
-                    <img src={getTrackSvgById(track.id)} alt="" className="w-full h-full object-contain" style={{ filter: 'brightness(10)' }} />
-                )}
+                <CircuitIconInline
+                    circuitId={track.id}
+                    className="w-full h-full"
+                    animate={true}
+                    loop={false}
+                    color={isSelected ? 'var(--red)' : 'var(--snow)'}
+                    opacity={1}
+                />
             </div>
 
             <div className="relative z-10 flex items-start justify-between w-full">
                 <div className="flex items-center gap-2">
-                    <span className="text-2xl drop-shadow">{getFlagEmoji(track.countryCode)}</span>
+                    <CircuitIcon circuitId={track.id} size="sm" variant="white" />
                     <span className={`text-[10px] font-mono uppercase tracking-widest ${isSelected ? 'text-red font-bold' : 'text-snow/40'}`}>
-                        {track.countryCode}
+                        {track.country}
                     </span>
                 </div>
                 {isSelected && (

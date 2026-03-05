@@ -5,10 +5,11 @@ import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { getRaceById, getRaceStatus } from '@/lib/data/calendar';
-import { timezones, formatSessionTime, formatSessionDate, getCountdown, getFlagEmoji } from '@/lib/utils';
+import { timezones, formatSessionTime, formatSessionDate, getCountdown } from '@/lib/utils';
 import { predictGrid } from '@/lib/predictions';
 import { Footer } from '@/components/layout/Footer';
-import { getTrackSvg } from '@/lib/data/track-layouts';
+import CircuitIconInline from '@/components/ui/CircuitIconInline';
+import { getCircuitIdForRace } from '@/lib/circuitMaps';
 
 // Map race IDs to track IDs
 const raceToTrackMap: Record<string, string> = {
@@ -90,12 +91,15 @@ export default function RaceDetailPage() {
             <div className="relative pt-32 pb-24 overflow-hidden border-b border-snow/10 noise-overlay">
                 {/* Track Layout Background */}
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-0 select-none pointer-events-none">
-                    {getTrackSvg(raceId) ? (
-                        <img src={getTrackSvg(raceId)} alt="" className="w-[50vw] md:w-[35vw] max-w-[500px] opacity-[0.15] group-hover:opacity-[0.25] transition-opacity" style={{ filter: 'brightness(10)' }} />
-                    ) : (
-                        <span className="text-[60vw] md:text-[40vw] filter grayscale contrast-150 opacity-[0.03] leading-none mix-blend-overlay">
-                            {getFlagEmoji(race.countryCode)}
-                        </span>
+                    {getCircuitIdForRace(raceId) && (
+                        <CircuitIconInline
+                            circuitId={getCircuitIdForRace(raceId)!}
+                            className="circuit-watermark"
+                            animate={true}
+                            loop={true}
+                            color="var(--snow)"
+                            opacity={0.08}
+                        />
                     )}
                 </div>
 

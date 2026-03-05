@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { calendar2025, calendar2026, getRaceStatus } from '@/lib/data/calendar';
 import { timezones, formatSessionTime, formatSessionDate, getFlagEmoji } from '@/lib/utils';
 import { Footer } from '@/components/layout/Footer';
-import { getTrackSvg } from '@/lib/data/track-layouts';
+import CircuitIcon from '@/components/ui/CircuitIcon';
+import CircuitIconInline from '@/components/ui/CircuitIconInline';
+import { getCircuitIdForRace } from '@/lib/circuitMaps';
 
 const statusConfig = {
     completed: { bg: 'bg-gunmetal-deep border-snow/10', badge: 'text-snow/40 border-snow/10', label: 'COMPLETED', dot: 'bg-snow/20' },
@@ -113,8 +115,14 @@ export default function CalendarPage() {
                                         >
                                             {/* Track Layout Watermark */}
                                             <div className="absolute -bottom-4 right-[-5%] w-[55%] h-[70%] pointer-events-none opacity-[0.15] group-hover:opacity-[0.3] group-hover:scale-105 transition-all duration-700 flex items-end justify-end">
-                                                {getTrackSvg(race.id) && (
-                                                    <img src={getTrackSvg(race.id)} alt="" className="w-full h-full object-contain text-snow" style={{ filter: 'brightness(10)' }} />
+                                                {getCircuitIdForRace(race.id) && (
+                                                    <CircuitIconInline
+                                                        circuitId={getCircuitIdForRace(race.id)!}
+                                                        className="circuit-watermark"
+                                                        animate={false}
+                                                        color="var(--snow)"
+                                                        opacity={0.12}
+                                                    />
                                                 )}
                                             </div>
 
@@ -131,7 +139,17 @@ export default function CalendarPage() {
 
                                                 <div>
                                                     <div className="flex items-center gap-3 mb-2">
-                                                        <span className="text-3xl filter drop-shadow-md">{getFlagEmoji(race.countryCode)}</span>
+                                                        {getCircuitIdForRace(race.id) ? (
+                                                            <CircuitIcon
+                                                                circuitId={getCircuitIdForRace(race.id)!}
+                                                                size="sm"
+                                                                variant="white"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-3xl filter drop-shadow-md">
+                                                                {getFlagEmoji(race.countryCode)}
+                                                            </span>
+                                                        )}
                                                         {race.isSprint && (
                                                             <span className="px-2 py-0.5 border border-red/30 bg-red-dim text-red text-[10px] font-mono font-bold tracking-wider uppercase">Sprint Weekend</span>
                                                         )}
@@ -190,8 +208,14 @@ export default function CalendarPage() {
                                                     <Link href={`/calendar/${race.id}`} className={`block p-5 border bg-gunmetal-deep hover:-translate-y-1 transition-all duration-300 relative overflow-hidden ${conf.bg} hover:border-red hover:shadow-[0_0_20px_rgba(237,40,57,0.1)]`}>
                                                         {/* Track Layout Background */}
                                                         <div className="absolute right-2 top-2 bottom-2 w-[80px] pointer-events-none opacity-[0.15] group-hover:opacity-[0.3] transition-opacity duration-500">
-                                                            {getTrackSvg(race.id) && (
-                                                                <img src={getTrackSvg(race.id)} alt="" className="w-full h-full object-contain" style={{ filter: 'brightness(10)' }} />
+                                                            {getCircuitIdForRace(race.id) && (
+                                                                <CircuitIconInline
+                                                                    circuitId={getCircuitIdForRace(race.id)!}
+                                                                    className="w-full h-full"
+                                                                    animate={false}
+                                                                    color="var(--snow)"
+                                                                    opacity={0.18}
+                                                                />
                                                             )}
                                                         </div>
                                                         {/* Activity Trace */}

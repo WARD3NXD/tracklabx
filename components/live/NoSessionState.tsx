@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { calendar2026, getRaceStatus, type Race } from '@/lib/data/calendar';
 import { getFlagEmoji } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import CircuitIconInline from '@/components/ui/CircuitIconInline';
+import { getCircuitIdForRace } from '@/lib/circuitMaps';
 
 type NextSessionInfo = {
   race: Race;
@@ -88,15 +90,16 @@ export function NoSessionState() {
         transition={{ duration: 80, repeat: Infinity, ease: 'linear' }}
         className="absolute inset-0 opacity-[0.04]"
       >
-        <svg
-          viewBox="0 0 800 600"
-          className="w-full h-full"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <path d="M200 100 Q250 80 300 100 L400 120 Q450 130 480 180 L500 250 Q510 300 480 340 L420 400 Q380 430 340 420 L280 400 Q240 390 220 360 L180 280 Q160 230 180 180 Z" />
-        </svg>
+        {next && getCircuitIdForRace(next.race.id) && (
+          <CircuitIconInline
+            circuitId={getCircuitIdForRace(next.race.id)!}
+            className="circuit-watermark"
+            animate={true}
+            loop={true}
+            color="var(--snow)"
+            opacity={0.06}
+          />
+        )}
       </motion.div>
 
       <div className="relative z-10 max-w-xl mx-auto px-4 text-center">

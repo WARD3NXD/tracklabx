@@ -2,26 +2,30 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import CircuitIconInline from '@/components/ui/CircuitIconInline';
 
-function DisconnectedCircuitSVG() {
+const RANDOM_CIRCUITS = [
+    'bahrain',
+    'monaco',
+    'silverstone',
+    'spa',
+    'suzuka',
+    'interlagos',
+];
+
+function RandomCircuitWatermark() {
+    const index = Math.floor(Math.random() * RANDOM_CIRCUITS.length);
+    const id = RANDOM_CIRCUITS[index]!;
     return (
-        <svg viewBox="0 0 400 300" className="absolute w-[150%] h-[150%] opacity-10 transform" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
-            {/* Broken path */}
-            <path d="M100 50 Q125 40 150 50 L190 58 M215 63 L240 90 L250 125 M248 140 Q240 160 210 200 L180 208 M160 210 L140 200 Q120 195 110 180 M98 160 L90 140 Q80 115 90 90 Z" />
-            <motion.path
-                d="M100 50 Q125 40 150 50 L200 60 Q225 65 240 90 L250 125 Q255 150 240 170 L210 200 Q190 215 170 210 L140 200 Q120 195 110 180 L90 140 Q80 115 90 90 Z"
-                stroke="var(--red)"
-                strokeWidth="4"
-                strokeDasharray="20 40"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: [0, 1], opacity: [0, 1, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            />
-            {/* Error node */}
-            <circle cx="202" cy="62" r="8" fill="var(--red)" opacity="0.5" className="animate-pulse" />
-            <circle cx="202" cy="62" r="4" fill="var(--red)" />
-        </svg>
-    ); // The error node
+        <CircuitIconInline
+            circuitId={id}
+            className="circuit-watermark"
+            animate
+            loop
+            color="var(--red)"
+            opacity={0.06}
+        />
+    );
 }
 
 export default function NotFoundPage() {
@@ -30,7 +34,7 @@ export default function NotFoundPage() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(237,40,57,0.05)_0%,_transparent_50%)]" />
 
             <div className="absolute inset-0 flex items-center justify-center mix-blend-screen pointer-events-none">
-                <DisconnectedCircuitSVG />
+                <RandomCircuitWatermark />
             </div>
 
             <div className="text-center relative z-10 flex flex-col items-center">
