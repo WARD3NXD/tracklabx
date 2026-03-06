@@ -1,15 +1,57 @@
-const BASE = 'https://api.openf1.org/v1';
+const BASE = '/api/openf1';
 
-export async function getCurrentSession() {
-  const res = await fetch(`${BASE}/sessions?session_key=latest`, {
-    // Ensure we always hit OpenF1 directly from the browser / edge
+export const LIVE_SEASON = 2026;
+
+const SUPPORTED_SESSION_NAMES = new Set([
+  'Practice 1',
+  'Practice 2',
+  'Practice 3',
+  'Qualifying',
+  'Race',
+  // Sprint weekend support
+  'Sprint',
+  'Sprint Shootout',
+  'Sprint Qualifying',
+]);
+
+function isSupportedSessionName(session: any): boolean {
+  const name = session?.session_name ?? session?.session_type;
+  return typeof name === 'string' && SUPPORTED_SESSION_NAMES.has(name);
+}
+
+async function fetchOpenF1Json(path: string) {
+  const res = await fetch(`${BASE}${path}`, {
     cache: 'no-store',
   });
+
   if (!res.ok) {
-    throw new Error('Failed to fetch current session');
+    throw new Error(`Failed to fetch OpenF1 data (${res.status})`);
   }
-  const data = await res.json();
-  return data[0] ?? null;
+
+  return res.json();
+}
+
+export async function getCurrentSession() {
+  const now = new Date().toISOString();
+
+  // 1) Prefer an actively-running supported session in configured season.
+  const active = await fetchOpenF1Json(
+    `/sessions?year=${LIVE_SEASON}&date_start<=${encodeURIComponent(now)}&date_end>=${encodeURIComponent(now)}`,
+  );
+
+  const activeSupported = (active as any[]).find(isSupportedSessionName);
+  if (activeSupported) return activeSupported;
+
+  // 2) Fallback: most recent supported session in configured season.
+  const latestSeason = await fetchOpenF1Json(
+    `/sessions?year=${LIVE_SEASON}&session_key=latest`,
+  );
+  const latestSupported = (latestSeason as any[]).find(isSupportedSessionName);
+  if (latestSupported) return latestSupported;
+
+  // 3) Last-resort fallback keeps UI resilient if API filter shape changes.
+  const latestAny = await fetchOpenF1Json('/sessions?session_key=latest');
+  return (latestAny as any[]).find(isSupportedSessionName) ?? latestAny[0] ?? null;
 }
 
 export async function getDrivers(sessionKey: number) {
@@ -137,4 +179,3 @@ export function formatLapTime(seconds: number): string {
   const secs = (seconds % 60).toFixed(3).padStart(6, '0');
   return `${mins}:${secs}`;
 }
-
