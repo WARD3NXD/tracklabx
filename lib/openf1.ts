@@ -1,4 +1,4 @@
-const BASE = 'https://api.openf1.org/v1';
+const BASE = '/api/openf1';
 
 export async function getCurrentSession() {
   const res = await fetch(`${BASE}/sessions?session_key=latest`, {
