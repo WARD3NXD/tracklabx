@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLiveStatus } from '@/hooks/useLiveStatus';
+import { useLiveStatus, type LiveStatus } from '@/hooks/useLiveStatus';
 
 export function Navbar() {
     const { user, logout } = useAuth();
@@ -13,7 +13,7 @@ export function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const { isLive } = useLiveStatus();
+    const status: LiveStatus = useLiveStatus();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -64,13 +64,19 @@ export function Navbar() {
                         ))}
                         <Link
                             href="/live"
-                            className={`flex items-center gap-2 text-sm font-barlow font-semibold transition-colors ${isLive
-                                ? 'text-red hover:text-red-hot'
-                                : 'text-foreground/70 hover:text-foreground'
-                                }`}
+                            className="flex items-center gap-2 text-sm font-barlow font-semibold transition-colors"
+                            style={{
+                                color: status.state === 'live' ? 'var(--red)' : 
+                                       status.state === 'just-ended' ? '#FFC906' : 
+                                       'inherit'
+                            }}
                         >
-                            {isLive && <span className="live-dot" />}
-                            <span>{isLive ? 'LIVE' : 'Live Timing'}</span>
+                            {status.state === 'live' && <span className="live-dot" />}
+                            <span>
+                                {status.state === 'live' ? 'LIVE' : 
+                                 status.state === 'just-ended' ? 'POST-RACE' : 
+                                 'ANALYSIS'}
+                            </span>
                         </Link>
                     </div>
 
@@ -170,13 +176,23 @@ export function Navbar() {
                             <Link
                                 href="/live"
                                 onClick={() => setMobileOpen(false)}
-                                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-barlow font-semibold border ${isLive
-                                    ? 'text-red border-red/60 bg-red/5'
-                                    : 'text-foreground/70 border-border-red hover:text-foreground'
-                                    }`}
+                                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-barlow font-semibold border"
+                                style={{
+                                    color: status.state === 'live' ? 'var(--red)' : 
+                                           status.state === 'just-ended' ? '#FFC906' : 
+                                           'var(--foreground)',
+                                    borderColor: status.state === 'live' ? 'rgba(237,40,57,0.6)' : 
+                                                 status.state === 'just-ended' ? 'rgba(255,201,6,0.6)' : 
+                                                 'var(--border-red)',
+                                    backgroundColor: status.state === 'live' ? 'rgba(237,40,57,0.05)' : 'transparent'
+                                }}
                             >
-                                {isLive && <span className="live-dot" />}
-                                <span>{isLive ? 'LIVE SESSION' : 'Live Timing'}</span>
+                                {status.state === 'live' && <span className="live-dot" />}
+                                <span>
+                                    {status.state === 'live' ? 'LIVE SESSION' : 
+                                     status.state === 'just-ended' ? 'POST-RACE ANALYSIS' : 
+                                     'ANALYSIS'}
+                                </span>
                             </Link>
                             {user ? (
                                 <button onClick={handleLogout} className="flex-1 text-center px-4 py-2 text-sm font-sora font-medium border border-red text-red rounded-lg">

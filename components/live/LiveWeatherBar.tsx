@@ -6,7 +6,7 @@ type LiveWeatherBarProps = {
   weather: any | null;
 };
 
-export function LiveWeatherBar({ weather }: LiveWeatherBarProps) {
+export default function LiveWeatherBar({ weather }: LiveWeatherBarProps) {
   if (!weather) return null;
 
   const items = [

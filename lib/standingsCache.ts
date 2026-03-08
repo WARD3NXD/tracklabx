@@ -4,7 +4,7 @@ import { fetchDriverStandings, fetchConstructorStandings, fetchSeasonRaces } fro
 import { fetchOpenF1DriverStandings, fetchOpenF1ConstructorStandings, fetchOpenF1RaceResults } from './openf1Server'
 import { TEAM_COLORS } from './teamColors'
 
-const CURRENT_SEASON = 2026
+const CURRENT_SEASON = new Date().getFullYear()
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000  // 4 hours — refreshes after each race
 
 export async function getDriverStandings(year: number) {
@@ -16,7 +16,8 @@ export async function getDriverStandings(year: number) {
         const cached = snap.data()
         const isHistorical = year < CURRENT_SEASON
         const isFresh = Date.now() - cached.fetched.toMillis() < CACHE_TTL_MS
-        if (isHistorical || isFresh) return cached.data
+        // Force refresh for CURRENT_SEASON to clear stale/broken data
+        if (isHistorical || (isFresh && year !== CURRENT_SEASON)) return cached.data
     }
 
     let data: any[]
@@ -24,21 +25,48 @@ export async function getDriverStandings(year: number) {
     if (year >= CURRENT_SEASON) {
         // Current season: use OpenF1
         const result = await fetchOpenF1DriverStandings(year)
-        if (!result || !('standings' in result) || !result.standings?.length) return []
+        
+        // If fetch fails or returns empty, fallback to STALE cache if it exists
+        if (!result || !('standings' in result) || !result.standings?.length) {
+            // FOR NOW: Disable fallback to force fresh fetch and see the fix
+            // if (snap.exists()) {
+            //     console.log(`OpenF1 driver standings empty/failed for ${year}, using stale cache.`);
+            //     return snap.data().data;
+            // }
+            return []
+        }
 
-        data = result.standings.map((entry: any, idx: number) => ({
-            position: entry.position ?? idx + 1,
-            driverId: entry.driver_number?.toString() ?? '',
-            driverCode: entry.driver_acronym ?? entry.driver_name_acronym ?? '',
-            firstName: entry.driver_first_name ?? entry.first_name ?? '',
-            lastName: entry.driver_last_name ?? entry.last_name ?? '',
-            nationality: entry.driver_nationality ?? '',
-            teamId: entry.team_name?.toLowerCase().replace(/\s+/g, '_') ?? '',
-            teamName: entry.team_name ?? '',
-            teamColor: TEAM_COLORS[entry.team_name?.toLowerCase().replace(/\s+/g, '_') ?? ''] ?? entry.team_colour ? `#${entry.team_colour}` : '#888',
-            points: entry.points ?? 0,
-            wins: entry.wins ?? 0,
-        }))
+        // Fetch race results to calculate wins
+        const raceResults = await getRaceResults(year)
+        const winsMap = new Map<string, number>()
+        raceResults.forEach((race: any) => {
+            const winner = race.results?.find((r: any) => r.position === 1)
+            if (winner) {
+                const count = winsMap.get(winner.driverCode) || 0
+                winsMap.set(winner.driverCode, count + 1)
+            }
+        })
+
+        data = result.standings.map((entry: any, idx: number) => {
+            const di = entry.driver_info || {};
+            const teamId = di.team_name?.toLowerCase().replace(/\s+/g, '_') ?? '';
+            const fullName = di.full_name || di.broadcast_name || `Driver ${entry.driver_number}`;
+            const driverCode = di.name_acronym ?? di.broadcast_name?.split(' ').pop() ?? `#${entry.driver_number}`;
+            
+            return {
+                position: entry.position_current ?? entry.position ?? idx + 1,
+                driverId: entry.driver_number?.toString() ?? '',
+                driverCode: driverCode,
+                firstName: fullName.split(' ')[0],
+                lastName: fullName.split(' ').slice(1).join(' ') || fullName,
+                nationality: di.country_code ?? '',
+                teamId: teamId,
+                teamName: di.team_name || 'Generic Team',
+                teamColor: TEAM_COLORS[teamId] ?? (di.team_colour ? `#${di.team_colour}` : '#888'),
+                points: entry.points_current ?? entry.points ?? 0,
+                wins: winsMap.get(driverCode) || 0,
+            };
+        })
     } else {
         // Historical seasons: use Jolpica (Ergast)
         const raw = await fetchDriverStandings(year)
@@ -71,25 +99,76 @@ export async function getConstructorStandings(year: number) {
         const cached = snap.data()
         const isHistorical = year < CURRENT_SEASON
         const isFresh = Date.now() - cached.fetched.toMillis() < CACHE_TTL_MS
-        if (isHistorical || isFresh) return cached.data
+        // Force refresh for CURRENT_SEASON to clear stale/broken data
+        if (isHistorical || (isFresh && year !== CURRENT_SEASON)) return cached.data
     }
 
     let data: any[]
 
     if (year >= CURRENT_SEASON) {
         // Current season: use OpenF1
-        const raw = await fetchOpenF1ConstructorStandings(year)
-        if (!raw?.length) return []
+        const result = await fetchOpenF1ConstructorStandings(year)
+        const raw = (result && 'standings' in result) ? result.standings : []
+        const driversInfo = (result && 'driversInfo' in result) ? (result as any).driversInfo : []
+        
+        // If fetch fails or returns empty, fallback to STALE cache if it exists
+        if (!raw?.length) {
+            if (snap.exists()) {
+                console.log(`OpenF1 constructor standings empty/failed for ${year}, using stale cache.`);
+                return snap.data().data;
+            }
+            return []
+        }
 
-        data = raw.map((entry: any, idx: number) => ({
-            position: entry.position ?? idx + 1,
-            constructorId: entry.team_name?.toLowerCase().replace(/\s+/g, '_') ?? '',
-            name: entry.team_name ?? '',
-            nationality: '',
-            color: TEAM_COLORS[entry.team_name?.toLowerCase().replace(/\s+/g, '_') ?? ''] ?? entry.team_colour ? `#${entry.team_colour}` : '#888',
-            points: entry.points ?? 0,
-            wins: entry.wins ?? 0,
-        }))
+        // Fetch race results to calculate wins
+        const raceResults = await getRaceResults(year)
+        const teamWinsMap = new Map<string, number>()
+        raceResults.forEach((race: any) => {
+            const winner = race.results?.find((r: any) => r.position === 1)
+            if (winner) {
+                const count = teamWinsMap.get(winner.teamId) || 0
+                teamWinsMap.set(winner.teamId, count + 1)
+            }
+        })
+
+        data = (raw as any[]).map((entry: any, idx: number) => {
+            const teamId = (entry as any).team_name?.toLowerCase().replace(/\s+/g, '_') ?? '';
+            return {
+                position: (entry as any).position_current ?? (entry as any).position ?? idx + 1,
+                constructorId: teamId,
+                name: (entry as any).team_name ?? `Team ${idx + 1}`,
+                nationality: '',
+                color: TEAM_COLORS[teamId] ?? ((entry as any).team_colour ? `#${(entry as any).team_colour}` : '#888'),
+                points: (entry as any).points_current ?? (entry as any).points ?? 0,
+                wins: teamWinsMap.get(teamId) || 0,
+            };
+        })
+
+        // If ANY team names are missing in 2026, we can reconstruct standings from driver points
+        if (data.length > 0 && data.some(d => d.name.startsWith('Team '))) {
+            console.log("Team names missing in championships, reconstruct from drivers...");
+            const driverStandings = await getDriverStandings(year);
+            const teamPointsMap = new Map<string, {name: string, points: number, color: string}>();
+            
+            driverStandings.forEach((d: any) => {
+                const existing = teamPointsMap.get(d.teamId) || { name: d.teamName, points: 0, color: d.teamColor };
+                existing.points += d.points;
+                teamPointsMap.set(d.teamId, existing);
+            });
+
+            data = Array.from(teamPointsMap.entries())
+                .map(([id, info]: [string, {name: string, points: number, color: string}]) => ({
+                    position: 0,
+                    constructorId: id,
+                    name: info.name,
+                    nationality: '',
+                    color: info.color,
+                    points: info.points,
+                    wins: teamWinsMap.get(id) || 0
+                }))
+                .sort((a, b) => b.points - a.points)
+                .map((t, i) => ({ ...t, position: i + 1 }));
+        }
     } else {
         // Historical seasons: use Jolpica
         const raw = await fetchConstructorStandings(year)
@@ -118,7 +197,8 @@ export async function getRaceResults(year: number) {
         const cached = snap.data()
         const isHistorical = year < CURRENT_SEASON
         const isFresh = Date.now() - cached.fetched.toMillis() < CACHE_TTL_MS
-        if (isHistorical || isFresh) return cached.data
+        // Force refresh for CURRENT_SEASON to clear stale/broken data
+        if (isHistorical || (isFresh && year !== CURRENT_SEASON)) return cached.data
     }
 
     let data: any[]
@@ -126,7 +206,15 @@ export async function getRaceResults(year: number) {
     if (year >= CURRENT_SEASON) {
         // Current season: use OpenF1
         const raceResults = await fetchOpenF1RaceResults(year)
-        if (!raceResults?.length) return []
+        
+        // If fetch fails or returns empty, fallback to STALE cache if it exists
+        if (!raceResults?.length) {
+            if (snap.exists()) {
+                console.log(`OpenF1 race results empty/failed for ${year}, using stale cache.`);
+                return snap.data().data;
+            }
+            return []
+        }
 
         data = raceResults.map((race: any, idx: number) => ({
             round: idx + 1,

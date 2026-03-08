@@ -84,23 +84,13 @@ export async function getCurrentSession() {
 }
 
 export async function getDrivers(sessionKey: number) {
-  const res = await fetch(`${BASE}/drivers?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch drivers');
-  }
-  return res.json();
+  return fetchOpenF1Json(`/drivers?session_key=${sessionKey}`);
 }
 
 export async function getPositions(sessionKey: number) {
-  const res = await fetch(`${BASE}/position?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch positions');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/position?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return [];
+
   // Get latest position per driver
   const latest = new Map<number, any>();
   data.forEach((entry: any) => {
@@ -109,19 +99,16 @@ export async function getPositions(sessionKey: number) {
       latest.set(entry.driver_number, entry);
     }
   });
+
   return Array.from(latest.values()).sort(
     (a, b) => a.position - b.position,
   );
 }
 
 export async function getIntervals(sessionKey: number) {
-  const res = await fetch(`${BASE}/intervals?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch intervals');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/intervals?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return {};
+
   const latest = new Map<number, any>();
   data.forEach((entry: any) => {
     const existing = latest.get(entry.driver_number);
@@ -133,13 +120,9 @@ export async function getIntervals(sessionKey: number) {
 }
 
 export async function getLaps(sessionKey: number) {
-  const res = await fetch(`${BASE}/laps?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch laps');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/laps?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return null;
+
   // Find overall fastest lap
   return data.reduce((fastest: any, lap: any) => {
     if (!lap.lap_duration) return fastest;
@@ -149,13 +132,9 @@ export async function getLaps(sessionKey: number) {
 }
 
 export async function getStints(sessionKey: number) {
-  const res = await fetch(`${BASE}/stints?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch stints');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/stints?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return {};
+
   // Get current stint per driver
   const current = new Map<number, any>();
   data.forEach((stint: any) => {
@@ -168,13 +147,9 @@ export async function getStints(sessionKey: number) {
 }
 
 export async function getPitStops(sessionKey: number) {
-  const res = await fetch(`${BASE}/pit?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch pit stops');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/pit?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return [];
+
   return data
     .sort(
       (a: any, b: any) =>
@@ -184,13 +159,8 @@ export async function getPitStops(sessionKey: number) {
 }
 
 export async function getWeather(sessionKey: number) {
-  const res = await fetch(`${BASE}/weather?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch weather');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/weather?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return null;
   return data[data.length - 1] ?? null; // most recent reading
 }
 

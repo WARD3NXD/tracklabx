@@ -1,0 +1,286 @@
+/* ─── No Session Page Styles ───────────────────────── */
+.no-session-page {
+  min-height: 100vh;
+  background: var(--carbon);
+  padding: 0 0 120px;
+}
+
+.no-session-hero {
+  position: relative;
+  padding: 120px 5% 80px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--grid-line);
+}
+
+.no-session-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.no-session-hero .circuit-watermark {
+  position: absolute;
+  right: -5%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 45%;
+  opacity: 0.04;
+  filter: brightness(0) invert(1);
+}
+
+.no-session-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.status-dot--inactive {
+  width: 8px;
+  height: 8px;
+  background: rgba(255,250,250,0.3);
+  border-radius: 50%;
+}
+
+.status-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: rgba(255,250,250,0.4);
+}
+
+.no-session-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 900;
+  color: var(--snow);
+  line-height: 0.95;
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+}
+
+.no-session-subtitle {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  color: rgba(255,250,250,0.5);
+  margin: 0;
+}
+
+/* ─── Featured Analysis Banner ───────────────── */
+.featured-analysis-section {
+  padding: 60px 5% 0;
+}
+
+.section-label {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    color: var(--red);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+}
+
+.featured-analysis-banner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 24px;
+  background: var(--gunmetal-deep);
+  border: 1px solid rgba(255,250,250,0.06);
+  border-top: 3px solid var(--red);
+  border-radius: 12px;
+  padding: 40px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.featured-analysis-visual {
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  opacity: 0.15;
+  filter: brightness(0) invert(1);
+}
+
+.featured-circuit-svg {
+  width: 100%;
+  height: auto;
+}
+
+.featured-analysis-cta {
+  grid-column: 1;
+  margin-top: 12px;
+}
+
+.featured-round {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: var(--red);
+}
+
+.featured-race-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 900;
+  color: var(--snow);
+  line-height: 0.95;
+  margin: 8px 0;
+}
+
+.featured-gp {
+  color: var(--red);
+  font-size: 0.6em;
+}
+
+.featured-circuit {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255,250,250,0.4);
+}
+
+.featured-winner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.featured-winner-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--red);
+}
+
+.featured-winner-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--snow);
+}
+
+.featured-winner-team {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(255,250,250,0.4);
+}
+
+/* CTA Buttons */
+.btn-analysis-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--red);
+  color: var(--snow);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 14px 28px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.btn-analysis-primary:hover {
+  box-shadow: 0 0 30px rgba(237,40,57,0.4);
+  transform: translateY(-2px);
+}
+
+.btn-arrow {
+  transition: transform 0.2s;
+}
+
+.btn-analysis-primary:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+.btn-analysis-processing {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  color: rgba(255,250,250,0.4);
+  padding: 14px 0;
+}
+
+.processing-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255,250,250,0.1);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.processing-hint {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  color: rgba(255,250,250,0.25);
+}
+
+/* ─── Race Selector Grid ─────────────────────── */
+.race-selector-section {
+  padding: 60px 5% 0;
+}
+
+.race-selector-header {
+  margin-bottom: 32px;
+}
+
+.race-selector-hint {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255,250,250,0.4);
+  margin: 8px 0 0;
+}
+
+.race-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.race-selector-empty {
+    padding: 60px;
+    text-align: center;
+    background: var(--gunmetal-deep);
+    border: 1px dashed rgba(255, 250, 250, 0.1);
+    border-radius: 12px;
+    color: rgba(255, 250, 250, 0.4);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Responsive ─────────────────────────────── */
+@media (max-width: 768px) {
+  .featured-analysis-banner {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
+  .featured-analysis-visual {
+    display: none;
+  }
+
+  .race-selector-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .race-selector-grid {
+    grid-template-columns: 1fr;
+  }
+}
