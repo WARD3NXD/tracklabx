@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import AnalysisPageClient from './AnalysisPageClient'
 
 interface Props {
-  params: { year: string; round: string }
+  params: Promise<{ year: string; round: string }>
 }
 
 async function getAnalysisData(year: string, round: string) {
@@ -19,7 +19,8 @@ async function getAnalysisData(year: string, round: string) {
 }
 
 export default async function AnalysisPage({ params }: Props) {
-  const data = await getAnalysisData(params.year, params.round)
+  const { year, round } = await params
+  const data = await getAnalysisData(year, round)
   if (!data) notFound()
   return <AnalysisPageClient data={data} />
 }

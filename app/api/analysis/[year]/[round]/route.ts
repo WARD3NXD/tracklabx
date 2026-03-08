@@ -4,9 +4,9 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 export async function GET(
   req: Request,
-  { params }: { params: { year: string; round: string } }
+  { params }: { params: Promise<{ year: string; round: string }> }
 ) {
-  const { year, round } = params
+  const { year, round } = await params
   const cacheKey = `${year}_${round}`
 
   // Check Firestore cache

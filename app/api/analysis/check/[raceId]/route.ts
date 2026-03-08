@@ -4,10 +4,11 @@ import { doc, getDoc } from 'firebase/firestore'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { raceId: string } }
+  { params }: { params: Promise<{ raceId: string }> }
 ) {
   try {
-    const ref  = doc(db, 'analysis', params.raceId)
+    const { raceId } = await params
+    const ref  = doc(db, 'analysis', raceId)
     const snap = await getDoc(ref)
     return NextResponse.json({ cached: snap.exists() })
   } catch (err) {
