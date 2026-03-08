@@ -7,9 +7,9 @@ export default async function StandingsPage({
     searchParams: Promise<{ year?: string; tab?: string }>
 }) {
     const params = await searchParams;
-    const year = parseInt(params.year ?? '2025');
+    const year = parseInt(params.year ?? '2026');
     const validYears = [2021, 2022, 2023, 2024, 2025, 2026];
-    const safeYear = validYears.includes(year) ? year : 2025;
+    const safeYear = validYears.includes(year) ? year : 2026;
 
     const [drivers, constructors, races] = await Promise.all([
         getDriverStandings(safeYear),

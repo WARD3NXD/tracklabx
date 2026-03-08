@@ -3,7 +3,7 @@ config({ path: '.env.local' });
 
 import { getDriverStandings, getConstructorStandings, getRaceResults } from '../lib/standingsCache';
 
-const HISTORICAL_YEARS = [2021, 2022, 2023, 2024];
+const HISTORICAL_YEARS = [2021, 2022, 2023, 2024, 2025];
 
 async function seed() {
     console.log('--- Starting Standings Seed Process ---');

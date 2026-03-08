@@ -7,16 +7,16 @@ if (admin.apps.length === 0) {
 }
 
 /**
- * Weekly Standings Cache Refresh
- * Runs every Sunday at midnight (UTC) to delete the cached data for the current season.
- * This ensures that the next request to the Standings page will fetch fresh data
- * directly from the Jolpica API and re-populate the cache.
+ * Post-Race Standings Cache Refresh
+ * Runs every Monday at 00:00 UTC to delete the cached data for the current season.
+ * Races typically finish on Sunday, so this ensures fresh data is fetched on the
+ * first page load after each race weekend.
  */
 export const refreshCurrentSeason = functions.pubsub
-    .schedule('0 0 * * 0') // Every Sunday midnight
+    .schedule('0 0 * * 1') // Every Monday midnight UTC (after race day)
     .timeZone('UTC')
     .onRun(async () => {
-        const CURRENT = 2025; // The currently active racing season
+        const CURRENT = 2026; // The currently active racing season
         const db = admin.firestore();
 
         try {

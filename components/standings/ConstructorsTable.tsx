@@ -27,7 +27,7 @@ export default function ConstructorsTable({ constructors }: { constructors: Cons
         <div className="w-full overflow-x-auto">
             <table className="w-full min-w-[600px] text-left border-collapse">
                 <thead>
-                    <tr className="border-b border-grid-line text-snow/50 font-mono text-xs uppercase tracking-widest bg-carbon sticky top-0 z-10">
+                    <tr className="border-b border-snow/[0.06] text-snow/70 font-mono text-xs uppercase tracking-widest bg-carbon sticky top-0 z-10">
                         <th className="py-4 px-4 font-normal">Pos</th>
                         <th className="py-4 px-4 font-normal">Team</th>
                         <th className="py-4 px-4 font-normal text-center">Wins</th>
@@ -46,8 +46,8 @@ export default function ConstructorsTable({ constructors }: { constructors: Cons
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.3, delay: i * 0.03 }}
                                 className={`
-                  group relative border-b border-grid-line/50 transition-colors duration-200
-                  hover:bg-red/5 cursor-default
+                  group relative transition-colors duration-200
+                  hover:bg-red/[0.04] cursor-default
                 `}
                             >
                                 {/* Pos */}

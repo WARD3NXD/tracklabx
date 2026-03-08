@@ -65,8 +65,8 @@ export function Navbar() {
                         <Link
                             href="/live"
                             className={`flex items-center gap-2 text-sm font-barlow font-semibold transition-colors ${isLive
-                                    ? 'text-red hover:text-red-hot'
-                                    : 'text-foreground/70 hover:text-foreground'
+                                ? 'text-red hover:text-red-hot'
+                                : 'text-foreground/70 hover:text-foreground'
                                 }`}
                         >
                             {isLive && <span className="live-dot" />}
@@ -171,8 +171,8 @@ export function Navbar() {
                                 href="/live"
                                 onClick={() => setMobileOpen(false)}
                                 className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-barlow font-semibold border ${isLive
-                                        ? 'text-red border-red/60 bg-red/5'
-                                        : 'text-foreground/70 border-border-red hover:text-foreground'
+                                    ? 'text-red border-red/60 bg-red/5'
+                                    : 'text-foreground/70 border-border-red hover:text-foreground'
                                     }`}
                             >
                                 {isLive && <span className="live-dot" />}

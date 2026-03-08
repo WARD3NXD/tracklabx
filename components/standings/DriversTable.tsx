@@ -29,7 +29,7 @@ export default function DriversTable({ drivers }: { drivers: DriverEntry[] }) {
         <div className="w-full overflow-x-auto">
             <table className="w-full min-w-[600px] text-left border-collapse">
                 <thead>
-                    <tr className="border-b border-grid-line text-snow/50 font-mono text-xs uppercase tracking-widest bg-carbon sticky top-0 z-10">
+                    <tr className="border-b border-snow/[0.06] text-snow/70 bg-snowwhite font-mono text-xs uppercase tracking-widest bg-carbon sticky top-0 z-10">
                         <th className="py-4 px-4 font-normal">Pos</th>
                         <th className="py-4 px-4 font-normal">Driver</th>
                         <th className="py-4 px-4 font-normal">Team</th>
@@ -48,9 +48,9 @@ export default function DriversTable({ drivers }: { drivers: DriverEntry[] }) {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.3, delay: i * 0.03 }}
                                 className={`
-                  group relative border-b-snow/20 border-grid-line/50 transition-colors duration-200
-                  hover:bg-snow/10 cursor-default
-                  ${isLeader ? 'bg-red-glow/10 border-l-[1px] border-l-red' : 'border-l-[1px] border-l-transparent'}
+                  group relative transition-colors duration-200
+                  hover:bg-snow/[0.04] cursor-default
+                  ${isLeader ? 'bg-red/[0.06] border-l-2 border-l-red' : ''}
                 `}
                             >
                                 {/* Pos */}
