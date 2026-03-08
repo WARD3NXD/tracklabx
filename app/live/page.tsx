@@ -24,7 +24,7 @@ export default function LiveSessionPage() {
     drivers,
   } = useLiveSession();
 
-  if (!loading && (!session || !isLive)) {
+  if (!loading && !session) {
     return (
       <div className="pt-16 bg-carbon text-snow min-h-screen">
         <NoSessionState />

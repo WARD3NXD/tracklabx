@@ -19,10 +19,22 @@ function isSupportedSessionName(session: any): boolean {
   return typeof name === 'string' && SUPPORTED_SESSION_NAMES.has(name);
 }
 
-async function fetchOpenF1Json(path: string) {
+async function fetchOpenF1Json(path: string, retries = 2): Promise<any> {
   const res = await fetch(`${BASE}${path}`, {
     cache: 'no-store',
   });
+
+  // OpenF1 returns 404 when a query has no matching results.
+  if (res.status === 404) {
+    return [];
+  }
+
+  // Retry on 429 rate-limit with exponential backoff
+  if (res.status === 429 && retries > 0) {
+    const backoff = (3 - retries) * 1000; // 1s, 2s
+    await new Promise((r) => setTimeout(r, backoff));
+    return fetchOpenF1Json(path, retries - 1);
+  }
 
   if (!res.ok) {
     throw new Error(`Failed to fetch OpenF1 data (${res.status})`);
@@ -32,26 +44,43 @@ async function fetchOpenF1Json(path: string) {
 }
 
 export async function getCurrentSession() {
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowISO = now.toISOString();
 
-  // 1) Prefer an actively-running supported session in configured season.
-  const active = await fetchOpenF1Json(
-    `/sessions?year=${LIVE_SEASON}&date_start<=${encodeURIComponent(now)}&date_end>=${encodeURIComponent(now)}`,
-  );
-
-  const activeSupported = (active as any[]).find(isSupportedSessionName);
-  if (activeSupported) return activeSupported;
-
-  // 2) Fallback: most recent supported session in configured season.
+  // 1) Fetch the latest session with data (cheapest single call, always works).
   const latestSeason = await fetchOpenF1Json(
     `/sessions?year=${LIVE_SEASON}&session_key=latest`,
   );
-  const latestSupported = (latestSeason as any[]).find(isSupportedSessionName);
-  if (latestSupported) return latestSupported;
+  const latestSession = (latestSeason as any[]).find(isSupportedSessionName)
+    ?? (latestSeason as any[])[0]
+    ?? null;
 
-  // 3) Last-resort fallback keeps UI resilient if API filter shape changes.
-  const latestAny = await fetchOpenF1Json('/sessions?session_key=latest');
-  return (latestAny as any[]).find(isSupportedSessionName) ?? latestAny[0] ?? null;
+  // If no session found at all, bail out.
+  if (!latestSession) return null;
+
+  // 2) Check if this latest session is currently active (within its time window).
+  const start = new Date(latestSession.date_start);
+  const end = new Date(latestSession.date_end);
+  if (now >= start && now <= end) {
+    return latestSession; // It's live right now!
+  }
+
+  // 3) The latest session has ended. Try to find one that's currently active
+  //    (e.g. a newer session from the same weekend that just started).
+  try {
+    const active = await fetchOpenF1Json(
+      `/sessions?year=${LIVE_SEASON}&date_start<=${encodeURIComponent(nowISO)}&date_end>${encodeURIComponent(nowISO)}`,
+    );
+    const activeSupported = (active as any[]).find(isSupportedSessionName);
+    if (activeSupported) return activeSupported;
+  } catch {
+    // If the active-session query fails, no problem — we fall through
+    // to return the latest session's data as a replay.
+  }
+
+  // 4) No session is live. Return the most recent completed session so the
+  //    UI can show its results instead of a blank "No Session" state.
+  return latestSession;
 }
 
 export async function getDrivers(sessionKey: number) {
