@@ -8,7 +8,7 @@ type LiveFastestLapProps = {
   drivers: any[];
 };
 
-export function LiveFastestLap({ fastestLap, drivers }: LiveFastestLapProps) {
+export default function LiveFastestLap({ fastestLap, drivers }: LiveFastestLapProps) {
   if (!fastestLap) {
     return (
       <div className="card-glow bg-gunmetal-deep/80 p-4 sm:p-5 flex flex-col justify-between">
@@ -77,9 +77,9 @@ export function LiveFastestLap({ fastestLap, drivers }: LiveFastestLapProps) {
         <span>
           Sectors:{' '}
           <span className="text-snow/80">
-            S1 {fastestLap.duration_sector_1?.toFixed(1) ?? '—'} · S2{' '}
-            {fastestLap.duration_sector_2?.toFixed(1) ?? '—'} · S3{' '}
-            {fastestLap.duration_sector_3?.toFixed(1) ?? '—'}
+            S1 {fastestLap.duration_sector_1 != null ? fastestLap.duration_sector_1.toFixed(1) : '—'} · S2{' '}
+            {fastestLap.duration_sector_2 != null ? fastestLap.duration_sector_2.toFixed(1) : '—'} · S3{' '}
+            {fastestLap.duration_sector_3 != null ? fastestLap.duration_sector_3.toFixed(1) : '—'}
           </span>
         </span>
       </div>

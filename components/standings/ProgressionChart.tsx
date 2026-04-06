@@ -98,7 +98,7 @@ export default function ProgressionChart({ races, type }: ProgressionChartProps)
     };
 
     return (
-        <div className="w-full h-full min-h-[400px] flex flex-col bg-gunmetal-deep relative rounded-xl border border-grid-line/50 p-6 overflow-hidden">
+        <div className="w-full h-full min-h-[400px] flex flex-col bg-gunmetal-deep relative rounded-2xl p-8 overflow-hidden shadow-xl">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 z-10">
                 <div>
                     <h3 className="font-barlow font-bold text-2xl text-snow tracking-wide uppercase">Season Progression</h3>

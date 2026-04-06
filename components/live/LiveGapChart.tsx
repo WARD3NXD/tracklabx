@@ -16,13 +16,13 @@ type Props = {
   rows: LiveTimingRow[];
 };
 
-export function LiveGapChart({ rows }: Props) {
+export default function LiveGapChart({ rows }: Props) {
   if (!rows.length) return null;
 
   const data = rows.map((row) => {
     const isLeader = row.position === 1;
     const gapSeconds =
-      !row.gap || row.gap === 'LEADER' || row.gap.includes('LAP')
+      typeof row.gap !== 'string' || row.gap === 'LEADER' || row.gap.includes('LAP')
         ? 0
         : parseFloat(row.gap.replace('+', '').replace('s', ''));
     return {

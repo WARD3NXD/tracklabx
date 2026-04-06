@@ -1,198 +1,244 @@
-'use client';
+'use client'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import RaceCard from '@/components/calendar/RaceCard'
+import { fetchSeasonRaces } from '@/lib/jolpica'
+import { getCircuitSVG } from '@/lib/circuitMaps'
+import { formatSessionTime } from '@/lib/utils'
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { calendar2026, getRaceStatus, type Race } from '@/lib/data/calendar';
-import { getFlagEmoji } from '@/lib/utils';
-import { useEffect, useState } from 'react';
-import CircuitIconInline from '@/components/ui/CircuitIconInline';
-import { getCircuitIdForRace } from '@/lib/circuitMaps';
-
-type NextSessionInfo = {
-  race: Race;
-  label: string;
-  time: string;
-};
-
-function findNextSession(): NextSessionInfo | null {
-  const upcomingRace =
-    calendar2026.find((race) => getRaceStatus(race) === 'upcoming') ??
-    calendar2026[0];
-
-  const allSessions = [
-    { label: 'Free Practice 1', time: upcomingRace.sessions.fp1 },
-    ...(upcomingRace.isSprint
-      ? [
-          {
-            label: 'Sprint Qualifying',
-            time: upcomingRace.sessions.sprintShootout,
-          },
-          { label: 'Sprint Race', time: upcomingRace.sessions.sprint },
-        ]
-      : [
-          { label: 'Free Practice 2', time: upcomingRace.sessions.fp2 },
-          { label: 'Free Practice 3', time: upcomingRace.sessions.fp3 },
-        ]),
-    { label: 'Qualifying', time: upcomingRace.sessions.qualifying },
-    { label: 'Race', time: upcomingRace.sessions.race },
-  ].filter((s) => s.time !== null);
-
-  const now = new Date();
-  const next =
-    allSessions.find((s) => new Date(s.time!).getTime() > now.getTime()) ??
-    allSessions[allSessions.length - 1];
-
-  return {
-    race: upcomingRace,
-    label: next.label,
-    time: next.time!,
-  };
+interface NoSessionStateProps {
+  justEnded: boolean
+  lastRaceId: string | null
+  lastRaceRound: number | null
+  lastSession: any | null
 }
 
-function useCountdown(targetDate: string | null) {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
+export default function NoSessionState({
+  justEnded,
+  lastRaceId,
+  lastRaceRound,
+  lastSession,
+}: NoSessionStateProps) {
+  const [races, setRaces] = useState<any[]>([])
+  const [analysisReady, setReady] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  const currentYear = new Date().getFullYear()
 
   useEffect(() => {
-    if (!targetDate) return;
-    const update = () => {
-      const diff = Math.max(
-        0,
-        new Date(targetDate).getTime() - Date.now(),
-      );
-      setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / (1000 * 60)) % 60),
-        seconds: Math.floor((diff / 1000) % 60),
-      });
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [targetDate]);
+    async function load() {
+      try {
+        const seasonRaces = await fetchSeasonRaces(currentYear)
+        
+        // Filter only completed races (based on race date)
+        const completed = seasonRaces.filter((r: any) => {
+          const raceDate = new Date(r.date)
+          return raceDate < new Date()
+        })
 
-  return timeLeft;
-}
+        // Simple mapping to fit RaceCard expectations
+        const mapped = completed.map((r: any) => ({
+          id: r.raceName.toLowerCase().replace(/ /g, '-'),
+          round: parseInt(r.round),
+          circuitName: r.Circuit.circuitName,
+          country: r.Circuit.Location.country,
+          countryCode: r.Circuit.Location.country === 'USA' ? 'US' : 'Generic', // Simplification
+          startDate: r.date,
+          endDate: r.date,
+          sessions: { race: `${r.date}T${r.time || '00:00:00Z'}` },
+          results: { 
+            winner: r.Results && r.Results[0] ? { 
+                driver: `${r.Results[0].Driver.givenName} ${r.Results[0].Driver.familyName}`,
+                team: r.Results[0].Constructor.name
+            } : null 
+          },
+          isSprint: false // Simplification for now
+        }))
 
-export function NoSessionState() {
-  const next = findNextSession();
-  const countdown = useCountdown(next?.time ?? null);
+        setRaces(mapped.reverse()) // most recent first
+
+        // Check if analysis is cached for last race
+        if (lastRaceId) {
+          const check = await fetch(`/api/analysis/check/${lastRaceId}`)
+          const { cached } = await check.json()
+          setReady(cached)
+        }
+      } catch (err) {
+        console.error('Error loading races:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [lastRaceId, currentYear])
+
+  const featuredRace = races[0] ?? null
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center bg-carbon relative overflow-hidden">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 80, repeat: Infinity, ease: 'linear' }}
-        className="absolute inset-0 opacity-[0.04]"
+    <div className="no-session-page">
+      {/* ── Hero: No Live Session Banner ── */}
+      <motion.section
+        className="no-session-hero"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
       >
-        {next && getCircuitIdForRace(next.race.id) && (
-          <CircuitIconInline
-            circuitId={getCircuitIdForRace(next.race.id)!}
-            className="circuit-watermark"
-            animate={true}
-            loop={true}
-            color="var(--snow)"
-            opacity={0.06}
-          />
-        )}
-      </motion.div>
-
-      <div className="relative z-10 max-w-xl mx-auto px-4 text-center">
-        <div className="mb-4 flex items-center justify-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-snow/40" />
-          <span className="font-barlow text-[0.8rem] uppercase tracking-[0.25em] text-snow/40">
-            Live Timing
-          </span>
-        </div>
-
-        <h1 className="font-barlow font-black text-3xl sm:text-4xl md:text-5xl uppercase tracking-[0.08em] text-snow mb-3">
-          No Active Session
-        </h1>
-        <p className="font-jakarta text-snow/60 text-sm sm:text-base mb-10">
-          The track is quiet right now. Check back when the next session
-          goes green, or explore the full race calendar.
-        </p>
-
-        {next && (
-          <div className="card-glow bg-gunmetal-deep/90 p-6 mb-10 border border-snow/10">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <span className="text-xl">
-                {getFlagEmoji(next.race.countryCode)}
-              </span>
-              <div className="text-left">
-                <div className="font-barlow text-xs uppercase tracking-[0.25em] text-red mb-1">
-                  Next Session
-                </div>
-                <div className="font-barlow text-lg text-snow uppercase">
-                  {next.race.country} Grand Prix ·{' '}
-                  <span className="text-red">{next.label}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="font-mono text-xs text-snow/60 mb-4">
-              {new Date(next.time).toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'short',
-              })}{' '}
-              ·{' '}
-              {new Date(next.time).toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}{' '}
-              UTC
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 max-w-xs mx-auto mb-4">
-              {[
-                { value: countdown.days, label: 'D' },
-                { value: countdown.hours, label: 'H' },
-                { value: countdown.minutes, label: 'M' },
-                { value: countdown.seconds, label: 'S' },
-              ].map((block) => (
-                <div
-                  key={block.label}
-                  className="bg-carbon border border-snow/10 py-2 text-center"
-                >
-                  <div className="font-mono text-lg text-snow tabular-nums">
-                    {block.value.toString().padStart(2, '0')}
-                  </div>
-                  <div className="font-jakarta text-[0.6rem] text-snow/40 uppercase tracking-[0.25em]">
-                    {block.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-3 mt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof Notification !== 'undefined') {
-                    Notification.requestPermission().catch(() => undefined);
-                  }
-                }}
-                className="px-4 py-2 bg-red text-white font-barlow text-xs tracking-[0.18em] uppercase"
-              >
-                Set Reminder
-              </button>
-              <Link
-                href="/calendar"
-                className="px-4 py-2 border border-snow/20 text-snow font-barlow text-xs tracking-[0.18em] uppercase hover:border-red hover:text-red transition-colors"
-              >
-                View Calendar
-              </Link>
-            </div>
+        {featuredRace && (
+          <div className="no-session-bg">
+            <img
+              src={getCircuitSVG(featuredRace.id)}
+              alt=""
+              className="circuit-watermark"
+            />
           </div>
         )}
-      </div>
-    </div>
-  );
-}
 
+        <div className="no-session-hero-content relative z-10">
+          <div className="no-session-status">
+            <span className="status-dot status-dot--inactive" />
+            <span className="status-label uppercase tracking-widest text-[#FFFAF0]/40">
+              {justEnded ? 'SESSION ENDED' : 'NO LIVE SESSION'}
+            </span>
+          </div>
+
+          <h1 className="no-session-title">
+            {justEnded ? 'RACE FINISHED' : 'TRACK IS QUIET'}
+          </h1>
+          <p className="no-session-subtitle">
+            {justEnded
+              ? `The ${lastSession?.session_name || 'session'} has ended.`
+              : 'No session is currently running.'}
+          </p>
+        </div>
+      </motion.section>
+
+      {/* ── Featured Race Analysis Banner ── */}
+      {featuredRace && (
+        <motion.section
+          className="featured-analysis-section"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <span className="section-label">
+            {justEnded ? 'JUST FINISHED' : 'MOST RECENT RACE'}
+          </span>
+
+          <div className="featured-analysis-banner">
+            <div className="featured-analysis-info">
+              <div className="featured-race-meta mb-2">
+                <span className="featured-round font-barlow font-bold text-red tracking-widest uppercase">
+                  ROUND {String(featuredRace.round).padStart(2, '0')}
+                </span>
+              </div>
+
+              <h2 className="featured-race-name">
+                {featuredRace.circuitName.toUpperCase()}
+                <br />
+                <span className="featured-gp text-red">GRAND PRIX</span>
+              </h2>
+
+              <p className="featured-circuit mt-2">
+                {featuredRace.country}
+              </p>
+
+              {featuredRace.results?.winner && (
+                <div className="featured-winner mt-6">
+                  <span className="featured-winner-label text-red">RACE WINNER</span>
+                  <span className="featured-winner-name ml-3 font-bold">{featuredRace.results.winner.driver}</span>
+                  <span className="featured-winner-team ml-2 text-snow/40">{featuredRace.results.winner.team}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="featured-analysis-visual">
+              <img
+                src={getCircuitSVG(featuredRace.id)}
+                alt={featuredRace.circuitName}
+                className="featured-circuit-svg"
+              />
+            </div>
+
+            <div className="featured-analysis-cta mt-8">
+              {analysisReady ? (
+                <Link
+                  href={`/analysis/${currentYear}-R${featuredRace.round}`}
+                  className="btn-analysis-primary"
+                >
+                  <span className="btn-icon">📊</span>
+                  FULL RACE ANALYSIS
+                  <span className="btn-arrow ml-2">→</span>
+                </Link>
+              ) : justEnded ? (
+                <div className="btn-analysis-processing">
+                  <div className="flex items-center gap-3">
+                    <span className="processing-spinner" />
+                    <span className="uppercase font-bold tracking-widest">ANALYSIS PROCESSING...</span>
+                  </div>
+                  <span className="processing-hint block mt-1 ml-8">
+                    Data arriving via FastF1. Check back in ~30 mins.
+                  </span>
+                </div>
+              ) : (
+                <Link
+                  href={`/analysis/${currentYear}-R${featuredRace.round}`}
+                  className="btn-analysis-primary"
+                >
+                  FULL RACE ANALYSIS →
+                </Link>
+              )}
+            </div>
+          </div>
+        </motion.section>
+      )}
+
+      {/* ── Race Selector Grid ── */}
+      <motion.section
+        className="race-selector-section"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
+        <div className="race-selector-header mb-8">
+          <span className="section-label">
+            {currentYear} SEASON — SELECT RACE ANALYSIS
+          </span>
+          <p className="race-selector-hint">
+            Choose any completed race to view post-race analysis
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+             {[...Array(4)].map((_, i) => (
+               <div key={i} className="h-[250px] bg-gunmetal-deep animate-pulse border border-snow/5 rounded-none" />
+             ))}
+          </div>
+        ) : races.length === 0 ? (
+          <div className="race-selector-empty">
+            <p>No completed races yet this season.</p>
+          </div>
+        ) : (
+          <div className="race-selector-grid">
+            {races.map((race: any, i: number) => (
+              <motion.div
+                key={race.round}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * i }}
+              >
+                <RaceCard
+                  race={race}
+                  href={`/analysis/${currentYear}-R${race.round}`}
+                  ctaLabel="View Analysis →"
+                  featured={i === 0}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.section>
+    </div>
+  )
+}
