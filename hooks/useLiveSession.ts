@@ -15,6 +15,7 @@ import {
 
 const POLL_INTERVAL = 5000; // 5 seconds for positions
 const WEATHER_INTERVAL = 30000; // 30 seconds for weather
+const SESSION_CHECK_INTERVAL = 60000; // 60 seconds for live status/session rollover
 
 export type LiveTimingRow = {
   position: number;
@@ -44,27 +45,57 @@ export function useLiveSession() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Initial session check
+  // Initial session check + periodic session rollover/live-status check
   useEffect(() => {
-    async function init() {
+    let cancelled = false;
+
+    async function syncSession() {
       try {
         const s = await getCurrentSession();
-        setSession(s);
-        const live = isSessionLive(s);
-        setIsLive(live);
+        if (cancelled) return;
 
-        if (s) {
+        setSession((prev: any) => {
+          const hasSessionChanged = prev?.session_key !== s?.session_key;
+
+          if (hasSessionChanged) {
+            setPositions([]);
+            setIntervals({});
+            setFastestLap(null);
+            setStints({});
+            setPitStops([]);
+            setWeather(null);
+            setLastUpdated(null);
+          }
+
+          return s;
+        });
+
+        setIsLive(isSessionLive(s));
+
+        if (s?.session_key) {
           const d = await getDrivers(s.session_key);
-          setDrivers(d);
+          if (!cancelled) {
+            setDrivers(d);
+          }
         }
       } catch (e) {
         console.error(e);
-        setError('Unable to load live session data right now.');
+        if (!cancelled) {
+          setError('Unable to load live session data right now.');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-    init();
+
+    syncSession();
+    const interval = setInterval(syncSession, SESSION_CHECK_INTERVAL);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   // Live polling
@@ -151,4 +182,3 @@ export function useLiveSession() {
     drivers,
   };
 }
-
