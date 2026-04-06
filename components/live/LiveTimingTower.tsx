@@ -29,7 +29,7 @@ function tyreEmoji(compound: string | null) {
   }
 }
 
-export function LiveTimingTower({ rows }: Props) {
+export default function LiveTimingTower({ rows }: Props) {
   return (
     <div className="card-glow h-full bg-gunmetal-deep/80 p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
@@ -78,21 +78,21 @@ export function LiveTimingTower({ rows }: Props) {
               }
             >
               <span className={isLeader ? 'text-red font-bold' : 'text-snow/70'}>
-                {row.position.toString().padStart(2, ' ')}
+                {row.position?.toString()?.padStart(2, ' ') ?? ' —'}
               </span>
               <span className="text-snow/60">
-                {row.driverNumber.toString().padStart(2, ' ')}
+                {row.driverNumber?.toString()?.padStart(2, ' ') ?? ' —'}
               </span>
               <span className="font-barlow text-snow text-sm">
-                {row.driverCode}
+                {row.driverCode || '???'}
               </span>
               <div className="flex items-center gap-2 overflow-hidden">
                 <div
                   className="w-1 h-4 rounded-full"
-                  style={{ backgroundColor: row.teamColor }}
+                  style={{ backgroundColor: row.teamColor || '#888' }}
                 />
                 <span className="font-jakarta text-[0.7rem] text-snow/60 truncate">
-                  {row.teamName}
+                  {row.teamName || 'Generic Team'}
                 </span>
               </div>
               <div className="flex items-center justify-center gap-1">
@@ -111,7 +111,7 @@ export function LiveTimingTower({ rows }: Props) {
                   isLeader ? 'text-red' : 'text-snow'
                 }`}
               >
-                {isLeader || !row.gap ? 'LEADER' : row.gap}
+                {isLeader || !row.gap || row.gap === 'LEADER' ? 'LEADER' : row.gap}
               </span>
               <span className="text-right tabular-nums text-snow/70">
                 {row.interval ?? '—'}
