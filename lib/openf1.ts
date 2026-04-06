@@ -1,15 +1,82 @@
-const BASE = 'https://api.openf1.org/v1';
+const BASE = '/api/openf1';
 
-export async function getCurrentSession() {
-  const res = await fetch(`${BASE}/sessions?session_key=latest`, {
-    // Ensure we always hit OpenF1 directly from the browser / edge
+export const LIVE_SEASON = 2026;
+
+const SUPPORTED_SESSION_NAMES = new Set([
+  'Practice 1',
+  'Practice 2',
+  'Practice 3',
+  'Qualifying',
+  'Race',
+  // Sprint weekend support
+  'Sprint',
+  'Sprint Shootout',
+  'Sprint Qualifying',
+]);
+
+type OpenF1Session = {
+  session_key: number;
+  session_name?: string;
+  session_type?: string;
+  date_start: string;
+  date_end: string;
+};
+
+function isSupportedSessionName(session: Partial<OpenF1Session> | null | undefined): boolean {
+  const name = session?.session_name ?? session?.session_type;
+  return typeof name === 'string' && SUPPORTED_SESSION_NAMES.has(name);
+}
+
+function buildQuery(params: Record<string, string | number>) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    search.append(key, String(value));
+  }
+  return search.toString();
+}
+
+async function fetchOpenF1Array(path: string): Promise<any[]> {
+  const res = await fetch(`${BASE}${path}`, {
     cache: 'no-store',
   });
+
   if (!res.ok) {
-    throw new Error('Failed to fetch current session');
+    throw new Error(`Failed to fetch OpenF1 data (${res.status})`);
   }
-  const data = await res.json();
-  return data[0] ?? null;
+
+  const json = await res.json();
+  return Array.isArray(json) ? json : [];
+}
+
+export async function getCurrentSession() {
+  const nowISO = new Date().toISOString();
+
+  // 1) Prefer actively-running supported session in configured season.
+  const active = await fetchOpenF1Array(
+    `/sessions?${buildQuery({
+      year: LIVE_SEASON,
+      'date_start<=': nowISO,
+      'date_end>=': nowISO,
+    })}`,
+  );
+  const activeSupported = active.find((s) => isSupportedSessionName(s));
+  if (activeSupported) return activeSupported;
+
+  // 2) Fallback to latest supported session in configured season.
+  const latestSeason = await fetchOpenF1Array(
+    `/sessions?${buildQuery({
+      year: LIVE_SEASON,
+      session_key: 'latest',
+    })}`,
+  );
+  const latestSupported = latestSeason.find((s) => isSupportedSessionName(s));
+  if (latestSupported) return latestSupported;
+
+  // 3) Last-resort fallback to latest supported from any season.
+  const latestAny = await fetchOpenF1Array(
+    `/sessions?${buildQuery({ session_key: 'latest' })}`,
+  );
+  return latestAny.find((s) => isSupportedSessionName(s)) ?? latestAny[0] ?? null;
 }
 
 export async function getDrivers(sessionKey: number) {
@@ -137,4 +204,3 @@ export function formatLapTime(seconds: number): string {
   const secs = (seconds % 60).toFixed(3).padStart(6, '0');
   return `${mins}:${secs}`;
 }
-
