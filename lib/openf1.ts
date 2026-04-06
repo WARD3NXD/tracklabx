@@ -14,7 +14,15 @@ const SUPPORTED_SESSION_NAMES = new Set([
   'Sprint Qualifying',
 ]);
 
-function isSupportedSessionName(session: any): boolean {
+type OpenF1Session = {
+  session_key: number;
+  session_name?: string;
+  session_type?: string;
+  date_start: string;
+  date_end: string;
+};
+
+function isSupportedSessionName(session: Partial<OpenF1Session> | null | undefined): boolean {
   const name = session?.session_name ?? session?.session_type;
   return typeof name === 'string' && SUPPORTED_SESSION_NAMES.has(name);
 }
