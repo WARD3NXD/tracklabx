@@ -19,6 +19,41 @@ function isSupportedSessionName(session: any): boolean {
   return typeof name === 'string' && SUPPORTED_SESSION_NAMES.has(name);
 }
 
+async function fetchOpenF1Json(path: string) {
+  const res = await fetch(`${BASE}${path}`, {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch OpenF1 data (${res.status})`);
+  }
+
+  return res.json();
+}
+
+export async function getCurrentSession() {
+  const now = new Date().toISOString();
+
+  // 1) Prefer an actively-running supported session in configured season.
+  const active = await fetchOpenF1Json(
+    `/sessions?year=${LIVE_SEASON}&date_start<=${encodeURIComponent(now)}&date_end>=${encodeURIComponent(now)}`,
+  );
+
+  const activeSupported = (active as any[]).find(isSupportedSessionName);
+  if (activeSupported) return activeSupported;
+
+  // 2) Fallback: most recent supported session in configured season.
+  const latestSeason = await fetchOpenF1Json(
+    `/sessions?year=${LIVE_SEASON}&session_key=latest`,
+  );
+  const latestSupported = (latestSeason as any[]).find(isSupportedSessionName);
+  if (latestSupported) return latestSupported;
+
+  // 3) Last-resort fallback keeps UI resilient if API filter shape changes.
+  const latestAny = await fetchOpenF1Json('/sessions?session_key=latest');
+  return (latestAny as any[]).find(isSupportedSessionName) ?? latestAny[0] ?? null;
+}
+
 async function fetchOpenF1Json(path: string, retries = 2): Promise<any> {
   const res = await fetch(`${BASE}${path}`, {
     cache: 'no-store',
