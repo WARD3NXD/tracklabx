@@ -98,35 +98,62 @@ export function useLiveSession() {
     };
   }, []);
 
-  // Live polling
-  const fetchLiveData = useCallback(async () => {
-    if (!session || !isLive) return;
+  // Small delay helper to avoid OpenF1 rate limits (429)
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  // Fetch timing data sequentially with delays to avoid rate limits
+  const fetchTimingData = useCallback(async (initialDelay = 0) => {
+    if (!session) return;
     try {
-      const [pos, ints, lap, st, pits] = await Promise.all([
-        getPositions(session.session_key),
-        getIntervals(session.session_key),
-        getLaps(session.session_key),
-        getStints(session.session_key),
-        getPitStops(session.session_key),
-      ]);
+      // Wait before starting if specified (avoids overlap with session/driver fetch)
+      if (initialDelay > 0) await delay(initialDelay);
+
+      const sk = session.session_key;
+      const pos = await getPositions(sk);
       setPositions(pos);
+
+      await delay(800);
+      const ints = await getIntervals(sk);
       setIntervals(ints);
+
+      await delay(800);
+      const lap = await getLaps(sk);
       setFastestLap(lap);
+
+      await delay(800);
+      const st = await getStints(sk);
       setStints(st);
+
+      await delay(800);
+      const pits = await getPitStops(sk);
       setPitStops(pits);
+
       setLastUpdated(new Date());
+      setError(null);
     } catch (e) {
       console.error(e);
       setError('Connection to live timing is unstable.');
     }
-  }, [session, isLive]);
+  }, [session]);
 
+  // Live polling (only when session is active)
   useEffect(() => {
-    if (!isLive) return;
-    fetchLiveData();
-    const interval = setInterval(fetchLiveData, POLL_INTERVAL);
+    if (!isLive || !session) return;
+    fetchTimingData();
+    const interval = setInterval(fetchTimingData, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [isLive, fetchLiveData]);
+  }, [isLive, session, fetchTimingData]);
+
+  // One-time data fetch for non-live sessions (show last session results)
+  // Uses a 2s initial delay to avoid rate limits from session/driver discovery
+  useEffect(() => {
+    if (isLive || !session) return;
+    let cancelled = false;
+    (async () => {
+      if (!cancelled) await fetchTimingData(2000);
+    })();
+    return () => { cancelled = true; };
+  }, [isLive, session, fetchTimingData]);
 
   // Weather polling (slower)
   useEffect(() => {

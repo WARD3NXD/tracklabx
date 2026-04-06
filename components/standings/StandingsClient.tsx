@@ -54,7 +54,7 @@ export default function StandingsClient({ year, drivers, constructors, races }: 
                         {/* Controls Row - Placed on the same line */}
                         <motion.div variants={fadeIn} className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-12">
                             {/* Year Selector */}
-                            <div className="flex flex-wrap gap-2">
+                            <div className="inline-flex gap-1">
                                 {validYears.map((y) => {
                                     const isActive = y === year;
                                     return (
@@ -66,55 +66,68 @@ export default function StandingsClient({ year, drivers, constructors, races }: 
                                                 }
                                             }}
                                             className={`
-                        px-6 py-2 font-mono text-sm uppercase tracking-widest border transition-colors
+                        relative px-5 py-3 font-mono text-sm uppercase tracking-widest transition-all duration-300
                         ${isActive
-                                                    ? 'bg-red border-red text-white font-bold shadow-[0_0_15px_rgba(237,40,57,0.4)]'
-                                                    : 'bg-gunmetal-deep border-grid-line text-snow/60 hover:text-snow hover:border-snow/30'}
+                                                    ? 'text-red font-bold'
+                                                    : 'text-snow/30 hover:text-snow/60'}
                       `}
                                         >
                                             {y}
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="year-indicator"
+                                                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-red rounded-full"
+                                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                                />
+                                            )}
                                         </button>
                                     );
                                 })}
                             </div>
 
                             {/* Tab Toggle */}
-                            <div className="inline-flex bg-gunmetal-deep border border-grid-line p-1 rounded-full shrink-0">
+                            <div className="inline-flex gap-1 shrink-0">
                                 {(['drivers', 'constructors'] as const).map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
                                         className={`
-                      px-8 py-3 rounded-full font-barlow font-bold text-lg uppercase tracking-wide transition-all
+                      relative px-6 py-3 font-barlow font-bold text-base uppercase tracking-[0.15em] transition-all duration-300
                       ${activeTab === tab
-                                                ? 'bg-carbon text-white shadow-md border border-snow/5'
-                                                : 'text-snow/50 hover:text-snow'}
+                                                ? 'text-red'
+                                                : 'text-snow/30 hover:text-snow/60'}
                     `}
                                     >
                                         {tab}
+                                        {activeTab === tab && (
+                                            <motion.div
+                                                layoutId="tab-indicator"
+                                                className="absolute bottom-0 left-0 right-0 h-[2px] bg-red rounded-full"
+                                                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                            />
+                                        )}
                                     </button>
                                 ))}
                             </div>
                         </motion.div>
                     </motion.header>
 
-                    {/* 2026 Empty State */}
-                    {year === 2026 && drivers.length === 0 ? (
+                    {/* Empty State */}
+                    {drivers.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="py-32 text-center border border-grid-line bg-gunmetal-deep/50 rounded-xl"
+                            className="py-32 text-center bg-gunmetal-deep/40 rounded-2xl backdrop-blur-sm"
                         >
-                            <h2 className="font-barlow font-bold text-3xl uppercase text-snow mb-4">Season Not Started Yet</h2>
+                            <h2 className="font-barlow font-bold text-3xl uppercase text-snow mb-4">No Standings Data Yet</h2>
                             <p className="font-jakarta text-snow/60 max-w-md mx-auto leading-relaxed">
-                                The 2026 FIA Formula One World Championship starts in Bahrain. Check back after the opening round for updated standings.
+                                The {year} season standings will appear here once race results are available. Check back after the opening round.
                             </p>
                         </motion.div>
                     ) : (
                         <>
                             {/* Tables Section */}
-                            <div className="mb-16 bg-gunmetal-deep rounded-xl border border-grid-line/50 p-6 shadow-2xl relative overflow-hidden">
-                                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,250,250,1) 1px, transparent 1px)', backgroundSize: '100% 32px' }} />
+                            <div className="mb-16 bg-gunmetal-deep rounded-xl shadow-2xl relative overflow-hidden">
 
                                 <AnimatePresence mode="wait">
                                     {activeTab === 'drivers' ? (
@@ -149,14 +162,14 @@ export default function StandingsClient({ year, drivers, constructors, races }: 
                             </div>
 
                             {/* Race Results List */}
-                            <div className="bg-gunmetal-deep rounded-xl border border-grid-line/50 p-6">
+                            <div className="bg-gunmetal-deep rounded-xl p-8 shadow-xl">
                                 <h3 className="font-barlow font-bold text-2xl text-snow tracking-wide uppercase mb-6 px-2">Round Results</h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                     {races.map((race) => (
                                         <button
                                             key={race.round}
                                             onClick={() => setSelectedRace(race)}
-                                            className="group flex flex-col items-start p-4 bg-carbon border border-grid-line hover:border-red/50 hover:bg-red/5 transition-all text-left rounded-lg"
+                                            className="group flex flex-col items-start p-5 bg-carbon/40 hover:bg-red/[0.08] transition-all text-left rounded-xl shadow-sm hover:shadow-red/10"
                                         >
                                             <span className="font-mono text-xs text-snow/40 group-hover:text-red tracking-widest uppercase mb-2">
                                                 Round {String(race.round).padStart(2, '0')}
@@ -164,7 +177,7 @@ export default function StandingsClient({ year, drivers, constructors, races }: 
                                             <span className="font-barlow font-bold text-lg text-snow uppercase truncate w-full group-hover:text-red-hot">
                                                 {race.country}
                                             </span>
-                                            <span className="font-mono text-xs text-snow/30 mt-auto pt-4 border-t border-grid-line/50 w-full text-right uppercase">
+                                            <span className="font-mono text-xs text-snow/20 mt-auto pt-4 w-full text-right uppercase group-hover:text-red/40 transition-colors">
                                                 View Top 10 →
                                             </span>
                                         </button>

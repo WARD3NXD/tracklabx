@@ -28,7 +28,7 @@ function tyreEmoji(compound: string | null) {
   }
 }
 
-export function LiveTyreMap({ rows }: Props) {
+export default function LiveTyreMap({ rows }: Props) {
   if (!rows.length) return null;
 
   return (

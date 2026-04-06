@@ -17,7 +17,7 @@ function timeAgo(dateString: string) {
   return `${hours}h ago`;
 }
 
-export function LivePitFeed({ pitStops, drivers }: LivePitFeedProps) {
+export default function LivePitFeed({ pitStops, drivers }: LivePitFeedProps) {
   return (
     <div className="card-glow bg-gunmetal-deep/80 p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">

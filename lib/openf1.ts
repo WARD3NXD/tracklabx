@@ -54,24 +54,78 @@ export async function getCurrentSession() {
   return (latestAny as any[]).find(isSupportedSessionName) ?? latestAny[0] ?? null;
 }
 
-export async function getDrivers(sessionKey: number) {
-  const res = await fetch(`${BASE}/drivers?session_key=${sessionKey}`, {
+async function fetchOpenF1Json(path: string, retries = 2): Promise<any> {
+  const res = await fetch(`${BASE}${path}`, {
     cache: 'no-store',
   });
-  if (!res.ok) {
-    throw new Error('Failed to fetch drivers');
+
+  // OpenF1 returns 404 when a query has no matching results.
+  if (res.status === 404) {
+    return [];
   }
+
+  // Retry on 429 rate-limit with exponential backoff
+  if (res.status === 429 && retries > 0) {
+    const backoff = (3 - retries) * 1000; // 1s, 2s
+    await new Promise((r) => setTimeout(r, backoff));
+    return fetchOpenF1Json(path, retries - 1);
+  }
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch OpenF1 data (${res.status})`);
+  }
+
   return res.json();
 }
 
-export async function getPositions(sessionKey: number) {
-  const res = await fetch(`${BASE}/position?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch positions');
+export async function getCurrentSession() {
+  const now = new Date();
+  const nowISO = now.toISOString();
+
+  // 1) Fetch the latest session with data (cheapest single call, always works).
+  const latestSeason = await fetchOpenF1Json(
+    `/sessions?year=${LIVE_SEASON}&session_key=latest`,
+  );
+  const latestSession = (latestSeason as any[]).find(isSupportedSessionName)
+    ?? (latestSeason as any[])[0]
+    ?? null;
+
+  // If no session found at all, bail out.
+  if (!latestSession) return null;
+
+  // 2) Check if this latest session is currently active (within its time window).
+  const start = new Date(latestSession.date_start);
+  const end = new Date(latestSession.date_end);
+  if (now >= start && now <= end) {
+    return latestSession; // It's live right now!
   }
-  const data = await res.json();
+
+  // 3) The latest session has ended. Try to find one that's currently active
+  //    (e.g. a newer session from the same weekend that just started).
+  try {
+    const active = await fetchOpenF1Json(
+      `/sessions?year=${LIVE_SEASON}&date_start<=${encodeURIComponent(nowISO)}&date_end>${encodeURIComponent(nowISO)}`,
+    );
+    const activeSupported = (active as any[]).find(isSupportedSessionName);
+    if (activeSupported) return activeSupported;
+  } catch {
+    // If the active-session query fails, no problem — we fall through
+    // to return the latest session's data as a replay.
+  }
+
+  // 4) No session is live. Return the most recent completed session so the
+  //    UI can show its results instead of a blank "No Session" state.
+  return latestSession;
+}
+
+export async function getDrivers(sessionKey: number) {
+  return fetchOpenF1Json(`/drivers?session_key=${sessionKey}`);
+}
+
+export async function getPositions(sessionKey: number) {
+  const data = await fetchOpenF1Json(`/position?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return [];
+
   // Get latest position per driver
   const latest = new Map<number, any>();
   data.forEach((entry: any) => {
@@ -80,19 +134,16 @@ export async function getPositions(sessionKey: number) {
       latest.set(entry.driver_number, entry);
     }
   });
+
   return Array.from(latest.values()).sort(
     (a, b) => a.position - b.position,
   );
 }
 
 export async function getIntervals(sessionKey: number) {
-  const res = await fetch(`${BASE}/intervals?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch intervals');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/intervals?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return {};
+
   const latest = new Map<number, any>();
   data.forEach((entry: any) => {
     const existing = latest.get(entry.driver_number);
@@ -104,13 +155,9 @@ export async function getIntervals(sessionKey: number) {
 }
 
 export async function getLaps(sessionKey: number) {
-  const res = await fetch(`${BASE}/laps?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch laps');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/laps?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return null;
+
   // Find overall fastest lap
   return data.reduce((fastest: any, lap: any) => {
     if (!lap.lap_duration) return fastest;
@@ -120,13 +167,9 @@ export async function getLaps(sessionKey: number) {
 }
 
 export async function getStints(sessionKey: number) {
-  const res = await fetch(`${BASE}/stints?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch stints');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/stints?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return {};
+
   // Get current stint per driver
   const current = new Map<number, any>();
   data.forEach((stint: any) => {
@@ -139,13 +182,9 @@ export async function getStints(sessionKey: number) {
 }
 
 export async function getPitStops(sessionKey: number) {
-  const res = await fetch(`${BASE}/pit?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch pit stops');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/pit?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return [];
+
   return data
     .sort(
       (a: any, b: any) =>
@@ -155,13 +194,8 @@ export async function getPitStops(sessionKey: number) {
 }
 
 export async function getWeather(sessionKey: number) {
-  const res = await fetch(`${BASE}/weather?session_key=${sessionKey}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch weather');
-  }
-  const data = await res.json();
+  const data = await fetchOpenF1Json(`/weather?session_key=${sessionKey}`);
+  if (!Array.isArray(data)) return null;
   return data[data.length - 1] ?? null; // most recent reading
 }
 
